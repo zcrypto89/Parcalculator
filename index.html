@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Rekod Parcel</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -89,13 +89,6 @@
             font-size: 1rem;
         }
 
-        .form-group input:focus,
-        .form-group select:focus {
-            border-color: #007BFF;
-            outline: none;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-        }
-
         .btn {
             background: #007BFF;
             color: white;
@@ -176,10 +169,30 @@
             background-color: #0056b3;
         }
 
-        .chart-container {
-            width: 100%;
-            max-width: 700px;
-            margin: 20px auto;
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .filter-container input {
+            width: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .filter-container button {
+            margin-left: 10px;
+        }
+
+        .total-fees {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
         }
     </style>
 </head>
@@ -189,7 +202,6 @@
         <div class="tabs">
             <div class="tab active" onclick="switchTab('record-tab')">Merekod Data</div>
             <div class="tab" onclick="switchTab('history-tab')">Melihat Sejarah</div>
-            <div class="tab" onclick="switchTab('stats-tab')">Statistik</div>
         </div>
 
         <!-- Tab Content: Merekod Data -->
@@ -216,6 +228,19 @@
 
         <!-- Tab Content: Melihat Sejarah -->
         <div id="history-tab" class="tab-content">
+            <div class="filter-container">
+                <div>
+                    <label for="start-date">Dari:</label>
+                    <input type="date" id="start-date">
+                    <label for="end-date">Hingga:</label>
+                    <input type="date" id="end-date">
+                    <button class="btn" onclick="filterByDate()">Tapis</button>
+                </div>
+                <div>
+                    <button class="btn" onclick="exportToCSV()">Eksport ke CSV</button>
+                    <button class="btn" onclick="exportToPDF()">Eksport ke PDF</button>
+                </div>
+            </div>
             <table class="record-table" id="record-table">
                 <thead>
                     <tr>
@@ -229,41 +254,36 @@
                     <!-- Rekod akan dimuatkan di sini -->
                 </tbody>
             </table>
+            <div class="total-fees" id="total-fees">Jumlah Keseluruhan Upah: RM0.00</div>
             <div class="actions" id="actions">
                 <button class="delete-btn" onclick="deleteSelectedRecord()">Padam</button>
                 <button class="cancel-btn" onclick="cancelSelection()">Batal</button>
             </div>
         </div>
-
-        <!-- Tab Content: Statistik -->
-        <div id="stats-tab" class="tab-content">
-            <h2 style="text-align: center; color: #333;">Statistik Penghantaran</h2>
-            <div class="chart-container">
-                <canvas id="statsChart"></canvas>
-            </div>
-        </div>
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            populateWeightCategories();
+            renderTable();
+        });
+
         const records = JSON.parse(localStorage.getItem('records')) || [];
         let selectedRowIndex = null;
 
-        const weightSelect = document.getElementById('weight-category');
-        for (let i = 0; i <= 100; i++) {
-            const option = document.createElement('option');
-            if (i === 0) {
-                option.value = '0';
-                option.text = 'Kurang 1 kg';
-            } else {
+        function populateWeightCategories() {
+            const weightSelect = document.getElementById('weight-category');
+            for (let i = 0; i <= 100; i++) {
+                const option = document.createElement('option');
                 option.value = i;
-                option.text = `${i} kg tetapi di bawah ${i + 1} kg`;
+                option.text = i === 0 ? 'Kurang 1 kg' : `${i} kg tetapi di bawah ${i + 1} kg`;
+                weightSelect.appendChild(option);
             }
-            weightSelect.appendChild(option);
         }
 
         function addRecord() {
             const date = document.getElementById('delivery-date').value;
-            const weight = parseFloat(document.getElementById('weight-category').value);
+            const weight = document.getElementById('weight-category').value;
             const quantity = parseInt(document.getElementById('quantity').value);
 
             if (!date || isNaN(quantity) || quantity <= 0) {
@@ -273,18 +293,21 @@
 
             const baseFee = 1.30;
             const additionalFeePerKg = 0.20;
-            let feeForOne = weight === 0 ? baseFee : baseFee + (weight * additionalFeePerKg);
-            const totalFee = feeForOne * quantity;
+            const feePerParcel = weight == 0 ? baseFee : baseFee + (weight * additionalFeePerKg);
+            const totalFee = (feePerParcel * quantity).toFixed(2);
 
-            const record = { date, weight: weightSelect.options[weightSelect.selectedIndex].text, quantity, totalFee: totalFee.toFixed(2) };
+            const record = { date, weight: `${weight} kg`, quantity, totalFee };
             records.push(record);
             localStorage.setItem('records', JSON.stringify(records));
             renderTable();
+            alert('Rekod berjaya ditambah!');
         }
 
         function renderTable() {
             const tableBody = document.getElementById('record-table').querySelector('tbody');
             tableBody.innerHTML = '';
+            let totalFees = 0;
+
             records.forEach((record, index) => {
                 const row = document.createElement('tr');
                 row.dataset.index = index;
@@ -296,7 +319,11 @@
                 `;
                 row.addEventListener('click', () => selectRow(index));
                 tableBody.appendChild(row);
+
+                totalFees += parseFloat(record.totalFee);
             });
+
+            document.getElementById('total-fees').textContent = `Jumlah Keseluruhan Upah: RM${totalFees.toFixed(2)}`;
         }
 
         function selectRow(index) {
@@ -323,6 +350,71 @@
             document.getElementById('actions').style.display = 'none';
         }
 
+        function filterByDate() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+
+            if (!startDate || !endDate) {
+                alert('Sila pilih julat tarikh yang sah.');
+                return;
+            }
+
+            const filteredRecords = records.filter(record => record.date >= startDate && record.date <= endDate);
+            renderFilteredTable(filteredRecords);
+        }
+
+        function renderFilteredTable(filteredRecords) {
+            const tableBody = document.getElementById('record-table').querySelector('tbody');
+            tableBody.innerHTML = '';
+            let totalFees = 0;
+
+            filteredRecords.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td>${record.weight}</td>
+                    <td>${record.quantity}</td>
+                    <td>${record.totalFee}</td>
+                `;
+                tableBody.appendChild(row);
+                totalFees += parseFloat(record.totalFee);
+            });
+
+            document.getElementById('total-fees').textContent = `Jumlah Keseluruhan Upah: RM${totalFees.toFixed(2)}`;
+        }
+
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Tarikh,Kategori Berat,Kuantiti,Jumlah Upah (RM)\n";
+
+            records.forEach(record => {
+                const row = `${record.date},${record.weight},${record.quantity},${record.totalFee}`;
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'rekod_parcel.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.text("Rekod Parcel", 10, 10);
+            let y = 20;
+            records.forEach(record => {
+                doc.text(`Tarikh: ${record.date}, Berat: ${record.weight}, Kuantiti: ${record.quantity}, Upah: RM${record.totalFee}`, 10, y);
+                y += 10;
+            });
+
+            doc.save("rekod_parcel.pdf");
+        }
+
         function switchTab(tabId) {
             const tabs = document.querySelectorAll('.tab');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -332,48 +424,7 @@
 
             document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
             document.getElementById(tabId).classList.add('active');
-
-            if (tabId === 'stats-tab') {
-                loadStatistics();
-            }
         }
-
-        function loadStatistics() {
-            const ctx = document.getElementById('statsChart').getContext('2d');
-
-            const weightCategories = records.map(record => record.weight);
-            const uniqueCategories = [...new Set(weightCategories)];
-
-            const quantities = uniqueCategories.map(category => {
-                return records
-                    .filter(record => record.weight === category)
-                    .reduce((sum, record) => sum + record.quantity, 0);
-            });
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: uniqueCategories,
-                    datasets: [{
-                        label: 'Jumlah Kuantiti',
-                        data: quantities,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        // Render table on load
-        renderTable();
     </script>
 </body>
 </html>
