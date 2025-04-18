@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Rekod Parcel</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to right, #74ebd5, #9face6);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            font-size: 1.2rem;
+            padding: 10px 15px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid #007BFF;
+            font-weight: bold;
+            color: #007BFF;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #007BFF;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        .btn {
+            background: #007BFF;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .record-table {
+            margin-top: 30px;
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .record-table th, .record-table td {
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .record-table th {
+            background: #007BFF;
+            color: white;
+        }
+
+        .record-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .record-table tr:hover {
+            background: #f1f1f1;
+            cursor: pointer;
+        }
+
+        .actions {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .actions button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .actions .delete-btn {
+            background-color: #ff4d4d;
+            color: white;
+        }
+
+        .actions .delete-btn:hover {
+            background-color: #e60000;
+        }
+
+        .actions .cancel-btn {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .actions .cancel-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistem Rekod Parcel</h1>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('record-tab')">Merekod Data</div>
+            <div class="tab" onclick="switchTab('history-tab')">Melihat Sejarah</div>
+            <div class="tab" onclick="switchTab('stats-tab')">Statistik</div>
+        </div>
+
+        <!-- Tab Content: Merekod Data -->
+        <div id="record-tab" class="tab-content active">
+            <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Tambah Rekod Baru</h2>
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="delivery-date">Tarikh:</label>
+                    <input type="date" id="delivery-date">
+                </div>
+                <div class="form-group">
+                    <label for="weight-category">Kategori Berat:</label>
+                    <select id="weight-category"></select>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Kuantiti:</label>
+                    <input type="number" id="quantity" placeholder="Masukkan kuantiti" min="1">
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" onclick="addRecord()">Tambah Rekod</button>
+            </div>
+        </div>
+
+        <!-- Tab Content: Melihat Sejarah -->
+        <div id="history-tab" class="tab-content">
+            <table class="record-table" id="record-table">
+                <thead>
+                    <tr>
+                        <th>Tarikh</th>
+                        <th>Kategori Berat</th>
+                        <th>Kuantiti</th>
+                        <th>Jumlah Upah (RM)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rekod akan dimuatkan di sini -->
+                </tbody>
+            </table>
+            <div class="actions" id="actions">
+                <button class="delete-btn" onclick="deleteSelectedRecord()">Padam</button>
+                <button class="cancel-btn" onclick="cancelSelection()">Batal</button>
+            </div>
+        </div>
+
+        <!-- Tab Content: Statistik -->
+        <div id="stats-tab" class="tab-content">
+            <h2 style="text-align: center; color: #333;">Statistik Penghantaran</h2>
+            <div class="chart-container">
+                <canvas id="statsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const records = JSON.parse(localStorage.getItem('records')) || [];
+        let selectedRowIndex = null;
+
+        const weightSelect = document.getElementById('weight-category');
+        for (let i = 0; i <= 100; i++) {
+            const option = document.createElement('option');
+            if (i === 0) {
+                option.value = '0';
+                option.text = 'Kurang 1 kg';
+            } else {
+                option.value = i;
+                option.text = `${i} kg tetapi di bawah ${i + 1} kg`;
+            }
+            weightSelect.appendChild(option);
+        }
+
+        function addRecord() {
+            const date = document.getElementById('delivery-date').value;
+            const weight = parseFloat(document.getElementById('weight-category').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+
+            if (!date || isNaN(quantity) || quantity <= 0) {
+                alert('Sila masukkan data yang sah.');
+                return;
+            }
+
+            const baseFee = 1.30;
+            const additionalFeePerKg = 0.20;
+            let feeForOne = weight === 0 ? baseFee : baseFee + (weight * additionalFeePerKg);
+            const totalFee = feeForOne * quantity;
+
+            const record = { date, weight: weightSelect.options[weightSelect.selectedIndex].text, quantity, totalFee: totalFee.toFixed(2) };
+            records.push(record);
+            localStorage.setItem('records', JSON.stringify(records));
+            renderTable();
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('record-table').querySelector('tbody');
+            tableBody.innerHTML = '';
+            records.forEach((record, index) => {
+                const row = document.createElement('tr');
+                row.dataset.index = index;
+                row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td>${record.weight}</td>
+                    <td>${record.quantity}</td>
+                    <td>${record.totalFee}</td>
+                `;
+                row.addEventListener('click', () => selectRow(index));
+                tableBody.appendChild(row);
+            });
+        }
+
+        function selectRow(index) {
+            selectedRowIndex = index;
+            const rows = document.querySelectorAll('#record-table tbody tr');
+            rows.forEach(row => row.classList.remove('selected'));
+            rows[index].classList.add('selected');
+            document.getElementById('actions').style.display = 'block';
+        }
+
+        function deleteSelectedRecord() {
+            if (selectedRowIndex !== null) {
+                records.splice(selectedRowIndex, 1);
+                localStorage.setItem('records', JSON.stringify(records));
+                renderTable();
+                cancelSelection();
+            }
+        }
+
+        function cancelSelection() {
+            selectedRowIndex = null;
+            const rows = document.querySelectorAll('#record-table tbody tr');
+            rows.forEach(row => row.classList.remove('selected'));
+            document.getElementById('actions').style.display = 'none';
+        }
+
+        function switchTab(tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'stats-tab') {
+                loadStatistics();
+            }
+        }
+
+        function loadStatistics() {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+
+            const weightCategories = records.map(record => record.weight);
+            const uniqueCategories = [...new Set(weightCategories)];
+
+            const quantities = uniqueCategories.map(category => {
+                return records
+                    .filter(record => record.weight === category)
+                    .reduce((sum, record) => sum + record.quantity, 0);
+            });
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: uniqueCategories,
+                    datasets: [{
+                        label: 'Jumlah Kuantiti',
+                        data: quantities,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render table on load
+        renderTable();
+    </script>
+</body>
+</html>
