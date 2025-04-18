@@ -6,6 +6,7 @@
     <title>Sistem Rekod Parcel</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <style>
+        /* General Styles */
         body {
             font-family: 'Roboto', sans-serif;
             background: linear-gradient(to right, #74ebd5, #9face6);
@@ -45,12 +46,15 @@
             padding: 10px 15px;
             cursor: pointer;
             text-align: center;
+            transition: all 0.3s ease;
         }
 
         .tab.active {
             border-bottom: 3px solid #007BFF;
             font-weight: bold;
-            color: #007BFF;
+            color: white;
+            background-color: #007BFF;
+            border-radius: 5px 5px 0 0;
         }
 
         .tab-content {
@@ -61,16 +65,20 @@
             display: block;
         }
 
+        /* Tab Merekod Data */
         .form-container {
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 20px;
-            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
         }
 
         .form-group {
-            flex: 1;
-            min-width: 280px;
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
         }
 
         .form-group label {
@@ -89,6 +97,13 @@
             font-size: 1rem;
         }
 
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #007BFF;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
         .btn {
             background: #007BFF;
             color: white;
@@ -104,8 +119,23 @@
             background: #0056b3;
         }
 
+        /* Tab Melihat Sejarah */
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .filter-container input {
+            width: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
         .record-table {
-            margin-top: 30px;
+            margin-top: 20px;
             width: 100%;
             border-collapse: collapse;
             background: #ffffff;
@@ -124,67 +154,20 @@
         .record-table th {
             background: #007BFF;
             color: white;
+            cursor: pointer;
         }
 
         .record-table tr:nth-child(even) {
             background: #f9f9f9;
         }
 
+        .record-table tr.selected {
+            background: #ffeeba;
+        }
+
         .record-table tr:hover {
             background: #f1f1f1;
             cursor: pointer;
-        }
-
-        .actions {
-            display: none;
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .actions button {
-            padding: 10px 20px;
-            margin: 5px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .actions .delete-btn {
-            background-color: #ff4d4d;
-            color: white;
-        }
-
-        .actions .delete-btn:hover {
-            background-color: #e60000;
-        }
-
-        .actions .cancel-btn {
-            background-color: #007BFF;
-            color: white;
-        }
-
-        .actions .cancel-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .filter-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-        }
-
-        .filter-container input {
-            width: 150px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-
-        .filter-container button {
-            margin-left: 10px;
         }
 
         .total-fees {
@@ -231,10 +214,9 @@
             <div class="filter-container">
                 <div>
                     <label for="start-date">Dari:</label>
-                    <input type="date" id="start-date">
+                    <input type="date" id="start-date" oninput="filterByDate()">
                     <label for="end-date">Hingga:</label>
-                    <input type="date" id="end-date">
-                    <button class="btn" onclick="filterByDate()">Tapis</button>
+                    <input type="date" id="end-date" oninput="filterByDate()">
                 </div>
                 <div>
                     <button class="btn" onclick="exportToCSV()">Eksport ke CSV</button>
@@ -244,10 +226,10 @@
             <table class="record-table" id="record-table">
                 <thead>
                     <tr>
-                        <th>Tarikh</th>
+                        <th onclick="sortTable('date')">Tarikh</th>
                         <th>Kategori Berat</th>
-                        <th>Kuantiti</th>
-                        <th>Jumlah Upah (RM)</th>
+                        <th onclick="sortTable('quantity')">Kuantiti</th>
+                        <th onclick="sortTable('totalFee')">Jumlah Upah (RM)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -255,17 +237,13 @@
                 </tbody>
             </table>
             <div class="total-fees" id="total-fees">Jumlah Keseluruhan Upah: RM0.00</div>
-            <div class="actions" id="actions">
-                <button class="delete-btn" onclick="deleteSelectedRecord()">Padam</button>
-                <button class="cancel-btn" onclick="cancelSelection()">Batal</button>
-            </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             populateWeightCategories();
-            renderTable();
+            initializeDefaultDateRange();
         });
 
         const records = JSON.parse(localStorage.getItem('records')) || [];
@@ -279,6 +257,13 @@
                 option.text = i === 0 ? 'Kurang 1 kg' : `${i} kg tetapi di bawah ${i + 1} kg`;
                 weightSelect.appendChild(option);
             }
+        }
+
+        function initializeDefaultDateRange() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start-date').value = today;
+            document.getElementById('end-date').value = today;
+            filterByDate();
         }
 
         function addRecord() {
@@ -296,58 +281,21 @@
             const feePerParcel = weight == 0 ? baseFee : baseFee + (weight * additionalFeePerKg);
             const totalFee = (feePerParcel * quantity).toFixed(2);
 
+            const existingIndex = records.findIndex(record => record.date === date && record.weight === `${weight} kg`);
+            if (existingIndex !== -1) {
+                const overwrite = confirm("Rekod untuk kategori ini sudah wujud. Adakah anda ingin menulis ganti?");
+                if (!overwrite) {
+                    return;
+                } else {
+                    records.splice(existingIndex, 1); // Remove existing record
+                }
+            }
+
             const record = { date, weight: `${weight} kg`, quantity, totalFee };
             records.push(record);
             localStorage.setItem('records', JSON.stringify(records));
-            renderTable();
+            filterByDate();
             alert('Rekod berjaya ditambah!');
-        }
-
-        function renderTable() {
-            const tableBody = document.getElementById('record-table').querySelector('tbody');
-            tableBody.innerHTML = '';
-            let totalFees = 0;
-
-            records.forEach((record, index) => {
-                const row = document.createElement('tr');
-                row.dataset.index = index;
-                row.innerHTML = `
-                    <td>${record.date}</td>
-                    <td>${record.weight}</td>
-                    <td>${record.quantity}</td>
-                    <td>${record.totalFee}</td>
-                `;
-                row.addEventListener('click', () => selectRow(index));
-                tableBody.appendChild(row);
-
-                totalFees += parseFloat(record.totalFee);
-            });
-
-            document.getElementById('total-fees').textContent = `Jumlah Keseluruhan Upah: RM${totalFees.toFixed(2)}`;
-        }
-
-        function selectRow(index) {
-            selectedRowIndex = index;
-            const rows = document.querySelectorAll('#record-table tbody tr');
-            rows.forEach(row => row.classList.remove('selected'));
-            rows[index].classList.add('selected');
-            document.getElementById('actions').style.display = 'block';
-        }
-
-        function deleteSelectedRecord() {
-            if (selectedRowIndex !== null) {
-                records.splice(selectedRowIndex, 1);
-                localStorage.setItem('records', JSON.stringify(records));
-                renderTable();
-                cancelSelection();
-            }
-        }
-
-        function cancelSelection() {
-            selectedRowIndex = null;
-            const rows = document.querySelectorAll('#record-table tbody tr');
-            rows.forEach(row => row.classList.remove('selected'));
-            document.getElementById('actions').style.display = 'none';
         }
 
         function filterByDate() {
@@ -355,7 +303,6 @@
             const endDate = document.getElementById('end-date').value;
 
             if (!startDate || !endDate) {
-                alert('Sila pilih julat tarikh yang sah.');
                 return;
             }
 
@@ -368,19 +315,52 @@
             tableBody.innerHTML = '';
             let totalFees = 0;
 
-            filteredRecords.forEach(record => {
+            filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by newest first
+
+            filteredRecords.forEach((record, index) => {
                 const row = document.createElement('tr');
+                row.dataset.index = index;
                 row.innerHTML = `
                     <td>${record.date}</td>
                     <td>${record.weight}</td>
                     <td>${record.quantity}</td>
                     <td>${record.totalFee}</td>
                 `;
+                row.addEventListener('click', () => selectRow(index));
                 tableBody.appendChild(row);
                 totalFees += parseFloat(record.totalFee);
             });
 
             document.getElementById('total-fees').textContent = `Jumlah Keseluruhan Upah: RM${totalFees.toFixed(2)}`;
+        }
+
+        function selectRow(index) {
+            selectedRowIndex = index;
+            const record = records[selectedRowIndex];
+            const confirmDelete = confirm(`Adakah anda pasti mahu memadam rekod berikut?\n\nTarikh: ${record.date}\nKategori Berat: ${record.weight}\nKuantiti: ${record.quantity}\nJumlah Upah: RM${record.totalFee}`);
+            if (confirmDelete) {
+                deleteSelectedRecord();
+            }
+        }
+
+        function deleteSelectedRecord() {
+            if (selectedRowIndex !== null) {
+                records.splice(selectedRowIndex, 1);
+                localStorage.setItem('records', JSON.stringify(records));
+                filterByDate();
+                selectedRowIndex = null;
+            }
+        }
+
+        function sortTable(property) {
+            records.sort((a, b) => {
+                if (property === 'date') {
+                    return new Date(b.date) - new Date(a.date); // Sort by date descending
+                } else if (property === 'quantity' || property === 'totalFee') {
+                    return b[property] - a[property]; // Sort numerically descending
+                }
+            });
+            filterByDate();
         }
 
         function exportToCSV() {
@@ -427,4 +407,4 @@
         }
     </script>
 </body>
-</html>
+</html
