@@ -36,7 +36,7 @@
 
         .tabs {
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             margin-bottom: 20px;
             border-bottom: 2px solid #ddd;
         }
@@ -122,16 +122,34 @@
         /* Tab Melihat Sejarah */
         .filter-container {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
             align-items: center;
             margin-top: 20px;
         }
 
-        .filter-container input {
-            width: 150px;
+        .filter-container label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .filter-container input,
+        .filter-container select {
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .filter-container select {
+            width: 200px;
+        }
+
+        .actions-container {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
         }
 
         .record-table {
@@ -144,9 +162,10 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .record-table th, .record-table td {
+        .record-table th,
+        .record-table td {
             border: 1px solid #ddd;
-            padding: 15px;
+            padding: 12px 15px;
             text-align: center;
             font-size: 0.9rem;
         }
@@ -154,20 +173,19 @@
         .record-table th {
             background: #007BFF;
             color: white;
-            cursor: pointer;
         }
 
         .record-table tr:nth-child(even) {
             background: #f9f9f9;
         }
 
-        .record-table tr.selected {
-            background: #ffeeba;
-        }
-
         .record-table tr:hover {
             background: #f1f1f1;
             cursor: pointer;
+        }
+
+        .record-table tr.selected {
+            background: #ffeeba;
         }
 
         .total-fees {
@@ -212,24 +230,39 @@
         <!-- Tab Content: Melihat Sejarah -->
         <div id="history-tab" class="tab-content">
             <div class="filter-container">
-                <div>
-                    <label for="start-date">Dari:</label>
-                    <input type="date" id="start-date" oninput="filterByDate()">
-                    <label for="end-date">Hingga:</label>
-                    <input type="date" id="end-date" oninput="filterByDate()">
+                <label for="filter-type">Pilihan Penapisan:</label>
+                <select id="filter-type" onchange="toggleFilterInputs()">
+                    <option value="daily">Mengikut Hari</option>
+                    <option value="range">Mengikut Julat Tarikh</option>
+                </select>
+
+                <!-- Input for daily filter -->
+                <div id="daily-filter" style="display: block;">
+                    <label for="filter-date">Pilih Tarikh:</label>
+                    <input type="date" id="filter-date" onchange="filterByDate()">
                 </div>
-                <div>
-                    <button class="btn" onclick="exportToCSV()">Eksport ke CSV</button>
-                    <button class="btn" onclick="exportToPDF()">Eksport ke PDF</button>
+
+                <!-- Input for range filter -->
+                <div id="range-filter" style="display: none;">
+                    <label for="start-date">Dari:</label>
+                    <input type="date" id="start-date" onchange="filterByDate()">
+                    <label for="end-date">Hingga:</label>
+                    <input type="date" id="end-date" onchange="filterByDate()">
                 </div>
             </div>
+
+            <div class="actions-container">
+                <button class="btn" onclick="exportToCSV()">Eksport ke CSV</button>
+                <button class="btn" onclick="exportToPDF()">Eksport ke PDF</button>
+            </div>
+
             <table class="record-table" id="record-table">
                 <thead>
                     <tr>
-                        <th onclick="sortTable('date')">Tarikh</th>
+                        <th>Tarikh</th>
                         <th>Kategori Berat</th>
-                        <th onclick="sortTable('quantity')">Kuantiti</th>
-                        <th onclick="sortTable('totalFee')">Jumlah Upah (RM)</th>
+                        <th>Kuantiti</th>
+                        <th>Jumlah Upah (RM)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -241,13 +274,13 @@
     </div>
 
     <script>
+        // JavaScript code for loading categories, adding records, filtering, exporting, and switching tabs
         document.addEventListener('DOMContentLoaded', () => {
             populateWeightCategories();
-            initializeDefaultDateRange();
+            initializeDefaultDate();
         });
 
         const records = JSON.parse(localStorage.getItem('records')) || [];
-        let selectedRowIndex = null;
 
         function populateWeightCategories() {
             const weightSelect = document.getElementById('weight-category');
@@ -259,8 +292,10 @@
             }
         }
 
-        function initializeDefaultDateRange() {
+        function initializeDefaultDate() {
             const today = new Date().toISOString().split('T')[0];
+            document.getElementById('delivery-date').value = today;
+            document.getElementById('filter-date').value = today;
             document.getElementById('start-date').value = today;
             document.getElementById('end-date').value = today;
             filterByDate();
@@ -298,15 +333,36 @@
             alert('Rekod berjaya ditambah!');
         }
 
-        function filterByDate() {
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
+        function toggleFilterInputs() {
+            const filterType = document.getElementById('filter-type').value;
+            const dailyFilter = document.getElementById('daily-filter');
+            const rangeFilter = document.getElementById('range-filter');
 
-            if (!startDate || !endDate) {
-                return;
+            if (filterType === 'daily') {
+                dailyFilter.style.display = 'block';
+                rangeFilter.style.display = 'none';
+            } else {
+                dailyFilter.style.display = 'none';
+                rangeFilter.style.display = 'block';
+            }
+        }
+
+        function filterByDate() {
+            const filterType = document.getElementById('filter-type').value;
+            let filteredRecords = [];
+
+            if (filterType === 'daily') {
+                const filterDate = document.getElementById('filter-date').value;
+                filteredRecords = records.filter(record => record.date === filterDate);
+            } else if (filterType === 'range') {
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+
+                if (!startDate || !endDate) return;
+
+                filteredRecords = records.filter(record => record.date >= startDate && record.date <= endDate);
             }
 
-            const filteredRecords = records.filter(record => record.date >= startDate && record.date <= endDate);
             renderFilteredTable(filteredRecords);
         }
 
@@ -315,18 +371,15 @@
             tableBody.innerHTML = '';
             let totalFees = 0;
 
-            filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by newest first
-
-            filteredRecords.forEach((record, index) => {
+            filteredRecords.forEach((record) => {
                 const row = document.createElement('tr');
-                row.dataset.index = index;
                 row.innerHTML = `
                     <td>${record.date}</td>
                     <td>${record.weight}</td>
                     <td>${record.quantity}</td>
                     <td>${record.totalFee}</td>
                 `;
-                row.addEventListener('click', () => selectRow(index));
+                row.onclick = () => deleteRecord(record);
                 tableBody.appendChild(row);
                 totalFees += parseFloat(record.totalFee);
             });
@@ -334,33 +387,16 @@
             document.getElementById('total-fees').textContent = `Jumlah Keseluruhan Upah: RM${totalFees.toFixed(2)}`;
         }
 
-        function selectRow(index) {
-            selectedRowIndex = index;
-            const record = records[selectedRowIndex];
-            const confirmDelete = confirm(`Adakah anda pasti mahu memadam rekod berikut?\n\nTarikh: ${record.date}\nKategori Berat: ${record.weight}\nKuantiti: ${record.quantity}\nJumlah Upah: RM${record.totalFee}`);
+        function deleteRecord(record) {
+            const confirmDelete = confirm("Adakah anda pasti mahu memadam rekod ini?");
             if (confirmDelete) {
-                deleteSelectedRecord();
-            }
-        }
-
-        function deleteSelectedRecord() {
-            if (selectedRowIndex !== null) {
-                records.splice(selectedRowIndex, 1);
-                localStorage.setItem('records', JSON.stringify(records));
-                filterByDate();
-                selectedRowIndex = null;
-            }
-        }
-
-        function sortTable(property) {
-            records.sort((a, b) => {
-                if (property === 'date') {
-                    return new Date(b.date) - new Date(a.date); // Sort by date descending
-                } else if (property === 'quantity' || property === 'totalFee') {
-                    return b[property] - a[property]; // Sort numerically descending
+                const index = records.findIndex(r => r.date === record.date && r.weight === record.weight && r.quantity === record.quantity);
+                if (index !== -1) {
+                    records.splice(index, 1);
+                    localStorage.setItem('records', JSON.stringify(records));
+                    filterByDate();
                 }
-            });
-            filterByDate();
+            }
         }
 
         function exportToCSV() {
@@ -407,4 +443,4 @@
         }
     </script>
 </body>
-</html
+</html>
