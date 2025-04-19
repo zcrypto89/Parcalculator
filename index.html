@@ -1,60 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Sistem Rekod Parcel</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* General Styles */
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: linear-gradient(to right, #74ebd5, #9face6);
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f0f9ff;
+            --surface-color: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+            --header-height: 60px;
+            --footer-height: 60px;
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * {
             margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            font-size: 16px;
+            height: -webkit-fill-available;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
             min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding: env(safe-area-inset-top) 0 calc(var(--footer-height) + var(--safe-area-inset-bottom)) 0;
+            margin: 0;
+            position: relative;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
         }
 
         .container {
-            background: #ffffff;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-            border-radius: 15px;
-            padding: 30px;
-            max-width: 1000px;
-            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            background: var(--surface-color);
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
         }
 
         h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
             text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 2rem;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .user-info {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(37, 99, 235, 0.1);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            text-align: center;
+        }
+
+        .user-info > div {
+            margin: 0.25rem 0;
         }
 
         .tabs {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ddd;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            background: var(--surface-color);
+            padding: 0.5rem;
+            border-radius: 12px;
+            position: sticky;
+            top: calc(var(--header-height) + 1rem);
+            z-index: 90;
         }
 
         .tab {
-            font-size: 1.2rem;
-            padding: 10px 15px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+            height: 48px;
+            border: none;
+            border-radius: 8px;
+            background: var(--background-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
 
         .tab.active {
-            border-bottom: 3px solid #007BFF;
-            font-weight: bold;
+            background: var(--primary-color);
             color: white;
-            background-color: #007BFF;
-            border-radius: 5px 5px 0 0;
         }
 
         .tab-content {
@@ -63,384 +123,608 @@
 
         .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
-        /* Tab Merekod Data */
-        .form-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: center;
-            margin-top: 20px;
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-container, .filter-container {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin: 0 0 1rem 0;
+            color: var(--text-color);
         }
 
         .form-group {
-            width: 100%;
-            max-width: 500px;
-            display: flex;
-            flex-direction: column;
+            margin-bottom: 1.5rem;
         }
 
         .form-group label {
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #555;
+            display: block;
+            margin-bottom: 0.5rem;
             font-size: 1rem;
+            font-weight: 500;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
+            height: 48px;
+            padding: 0 1rem;
+            border: 2px solid var(--border-color);
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 16px;
+            font-family: inherit;
+            background: var(--surface-color);
+            transition: border-color 0.2s ease;
+            -webkit-appearance: none;
         }
 
         .form-group input:focus,
         .form-group select:focus {
-            border-color: #007BFF;
             outline: none;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            border-color: var(--primary-color);
         }
 
-        .btn {
-            background: #007BFF;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            background: #0056b3;
-        }
-
-        /* Tab Melihat Sejarah */
-        .filter-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            margin-top: 20px;
-        }
-
-        .filter-container label {
-            font-weight: bold;
-            color: #555;
-        }
-
-        .filter-container input,
-        .filter-container select {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .filter-container select {
-            width: 200px;
-        }
-
-        .actions-container {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
+        .table-wrapper {
+            margin: 1rem -1rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .record-table {
-            margin-top: 20px;
             width: 100%;
-            border-collapse: collapse;
-            background: #ffffff;
-            border-radius: 10px;
+            min-width: 600px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--surface-color);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .record-table th,
-        .record-table td {
-            border: 1px solid #ddd;
-            padding: 12px 15px;
-            text-align: center;
-            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .record-table th {
-            background: #007BFF;
+            background: var(--primary-color);
             color: white;
+            font-weight: 500;
+            text-align: left;
+            padding: 1rem;
+            font-size: 0.9rem;
         }
 
-        .record-table tr:nth-child(even) {
-            background: #f9f9f9;
+        .record-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
         }
 
-        .record-table tr:hover {
-            background: #f1f1f1;
+        .record-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 48px;
+            padding: 0 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
+            transition: background 0.2s ease;
+            touch-action: manipulation;
         }
 
-        .record-table tr.selected {
-            background: #ffeeba;
+        .btn:active {
+            background: var(--secondary-color);
+        }
+
+        .actions-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 1rem;
         }
 
         .total-fees {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #333;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--surface-color);
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: right;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+            height: var(--footer-height);
+            padding-bottom: calc(1rem + var(--safe-area-inset-bottom));
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid var(--success-color);
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid var(--danger-color);
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 768px;
+                margin: 0 auto;
+                padding: 2rem;
+            }
+
+            h1 { font-size: 2rem; }
+            
+            .actions-container {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .form-container, .filter-container {
+                padding: 2rem;
+            }
+
+            .table-wrapper {
+                margin: 1rem 0;
+            }
+
+            .record-table th,
+            .record-table td {
+                font-size: 1rem;
+            }
+
+            .tabs {
+                margin: 1rem 0;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="header">
         <h1>Sistem Rekod Parcel</h1>
+        <div class="user-info">
+            <div>Login: zcrypto89</div>
+            <div>Current Date/Time (UTC): <span id="current-datetime">2025-04-19 00:16:55</span></div>
+        </div>
+    </div>
+
+    <div class="container">
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('record-tab')">Merekod Data</div>
-            <div class="tab" onclick="switchTab('history-tab')">Melihat Sejarah</div>
+            <button class="tab active" onclick="switchTab('record-tab')">Rekod</button>
+            <button class="tab" onclick="switchTab('history-tab')">Sejarah</button>
         </div>
 
-        <!-- Tab Content: Merekod Data -->
         <div id="record-tab" class="tab-content active">
-            <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Tambah Rekod Baru</h2>
             <div class="form-container">
+                <h2>Tambah Rekod Baru</h2>
+                <div id="notification-area"></div>
+                
                 <div class="form-group">
                     <label for="delivery-date">Tarikh:</label>
                     <input type="date" id="delivery-date">
                 </div>
+
                 <div class="form-group">
                     <label for="weight-category">Kategori Berat:</label>
-                    <select id="weight-category"></select>
+                    <select id="weight-category">
+                        <!-- Akan diisi oleh JavaScript -->
+                    </select>
                 </div>
+
                 <div class="form-group">
                     <label for="quantity">Kuantiti:</label>
-                    <input type="number" id="quantity" placeholder="Masukkan kuantiti" min="1">
+                    <input type="number" id="quantity" min="1" placeholder="Masukkan kuantiti">
                 </div>
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn" onclick="addRecord()">Tambah Rekod</button>
+
+                <div class="actions-container">
+                    <button class="btn" onclick="addRecord()">Tambah Rekod</button>
+                </div>
             </div>
         </div>
 
-        <!-- Tab Content: Melihat Sejarah -->
         <div id="history-tab" class="tab-content">
             <div class="filter-container">
-                <label for="filter-type">Pilihan Penapisan:</label>
-                <select id="filter-type" onchange="toggleFilterInputs()">
-                    <option value="daily">Mengikut Hari</option>
-                    <option value="range">Mengikut Julat Tarikh</option>
-                </select>
-
-                <!-- Input for daily filter -->
-                <div id="daily-filter" style="display: block;">
-                    <label for="filter-date">Pilih Tarikh:</label>
-                    <input type="date" id="filter-date" onchange="filterByDate()">
+                <h2>Tapis Rekod</h2>
+                
+                <div class="form-group">
+                    <label for="filter-type">Jenis Penapisan:</label>
+                    <select id="filter-type" onchange="toggleFilterInputs()">
+                        <option value="daily">Mengikut Hari</option>
+                        <option value="range">Mengikut Julat Tarikh</option>
+                    </select>
                 </div>
 
-                <!-- Input for range filter -->
-                <div id="range-filter" style="display: none;">
+                <div id="daily-filter" class="form-group">
+                    <label for="filter-date">Tarikh:</label>
+                    <input type="date" id="filter-date">
+                </div>
+
+                <div id="range-filter" class="form-group" style="display: none;">
                     <label for="start-date">Dari:</label>
-                    <input type="date" id="start-date" onchange="filterByDate()">
+                    <input type="date" id="start-date">
                     <label for="end-date">Hingga:</label>
-                    <input type="date" id="end-date" onchange="filterByDate()">
+                    <input type="date" id="end-date">
+                </div>
+
+                <div class="actions-container">
+                    <button class="btn" onclick="resetFilter()">Reset</button>
+                    <button class="btn" onclick="exportToCSV()">Eksport CSV</button>
+                    <button class="btn" onclick="exportToPDF()">Eksport PDF</button>
                 </div>
             </div>
 
-            <div class="actions-container">
-                <button class="btn" onclick="exportToCSV()">Eksport ke CSV</button>
-                <button class="btn" onclick="exportToPDF()">Eksport ke PDF</button>
+            <div class="table-wrapper">
+                <table class="record-table">
+                    <thead>
+                        <tr>
+                            <th>Tarikh</th>
+                            <th>Kategori Berat</th>
+                            <th>Kuantiti</th>
+                            <th>Jumlah Upah (RM)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Akan diisi oleh JavaScript -->
+                    </tbody>
+                </table>
             </div>
 
-            <table class="record-table" id="record-table">
-                <thead>
-                    <tr>
-                        <th>Tarikh</th>
-                        <th>Kategori Berat</th>
-                        <th>Kuantiti</th>
-                        <th>Jumlah Upah (RM)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Rekod akan dimuatkan di sini -->
-                </tbody>
-            </table>
-            <div class="total-fees" id="total-fees">Jumlah Keseluruhan Upah: RM0.00</div>
+            <div class="total-fees">
+                Jumlah Keseluruhan: RM0.00
+            </div>
         </div>
     </div>
 
     <script>
-        // JavaScript code for loading categories, adding records, filtering, exporting, and switching tabs
-        document.addEventListener('DOMContentLoaded', () => {
-            populateWeightCategories();
-            initializeDefaultDate();
-        });
+        // Initialize records from localStorage
+        let records = JSON.parse(localStorage.getItem('records')) || [];
+        let filteredRecords = [...records];
 
-        const records = JSON.parse(localStorage.getItem('records')) || [];
+        // Update datetime
+        function updateDateTime() {
+            const now = new Date();
+            const formatted = now.getUTCFullYear() + '-' + 
+                String(now.getUTCMonth() + 1).padStart(2, '0') + '-' + 
+                String(now.getUTCDate()).padStart(2, '0') + ' ' + 
+                String(now.getUTCHours()).padStart(2, '0') + ':' + 
+                String(now.getUTCMinutes()).padStart(2, '0') + ':' + 
+                String(now.getUTCSeconds()).padStart(2, '0');
+            document.getElementById('current-datetime').textContent = formatted;
+        }
 
-        function populateWeightCategories() {
-            const weightSelect = document.getElementById('weight-category');
-            for (let i = 0; i <= 100; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.text = i === 0 ? 'Kurang 1 kg' : `${i} kg tetapi di bawah ${i + 1} kg`;
-                weightSelect.appendChild(option);
+        // Format date for display
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('ms-MY', options);
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notificationArea = document.getElementById('notification-area');
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type}`;
+            notification.textContent = message;
+            
+            notificationArea.innerHTML = '';
+            notificationArea.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Switch between tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+                content.classList.remove('active');
+            });
+
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            const selectedTab = document.getElementById(tabId);
+            selectedTab.style.display = 'block';
+            selectedTab.classList.add('active');
+
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`)
+                .classList.add('active');
+
+            if (tabId === 'history-tab') {
+                filteredRecords = [...records];
+                renderTable(filteredRecords);
             }
         }
 
-        function initializeDefaultDate() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('delivery-date').value = today;
-            document.getElementById('filter-date').value = today;
-            document.getElementById('start-date').value = today;
-            document.getElementById('end-date').value = today;
-            filterByDate();
+        // Populate weight categories
+        function populateWeightCategories() {
+            const weightSelect = document.getElementById('weight-category');
+            weightSelect.innerHTML = `
+                <option value="" disabled selected>Pilih kategori berat</option>
+                ${Array.from({length: 101}, (_, i) => 
+                    `<option value="${i}">${i === 0 ? 'Kurang 1 kg' : 
+                    `${i} kg hingga bawah ${i + 1} kg`}</option>`
+                ).join('')}
+            `;
         }
 
+        // Add new record
         function addRecord() {
             const date = document.getElementById('delivery-date').value;
-            const weight = document.getElementById('weight-category').value;
+            const weightSelect = document.getElementById('weight-category');
             const quantity = parseInt(document.getElementById('quantity').value);
 
-            if (!date || isNaN(quantity) || quantity <= 0) {
-                alert('Sila masukkan data yang sah.');
+            if (!date || !weightSelect.value || isNaN(quantity) || quantity <= 0) {
+                showNotification('Sila isi semua maklumat dengan betul.', 'error');
                 return;
             }
 
+            const weight = weightSelect.value;
             const baseFee = 1.30;
             const additionalFeePerKg = 0.20;
-            const feePerParcel = weight == 0 ? baseFee : baseFee + (weight * additionalFeePerKg);
+            const feePerParcel = weight == 0 ? baseFee : 
+                baseFee + (weight * additionalFeePerKg);
             const totalFee = (feePerParcel * quantity).toFixed(2);
 
-            const existingIndex = records.findIndex(record => record.date === date && record.weight === `${weight} kg`);
+            const record = {
+                date,
+                weight: `${weight} kg`,
+                quantity,
+                totalFee
+            };
+
+            const existingIndex = records.findIndex(r => 
+                r.date === date && r.weight === record.weight
+            );
+
             if (existingIndex !== -1) {
-                const overwrite = confirm("Rekod untuk kategori ini sudah wujud. Adakah anda ingin menulis ganti?");
-                if (!overwrite) {
+                if (!confirm('Rekod untuk tarikh dan berat ini sudah wujud. Ganti?')) {
                     return;
-                } else {
-                    records.splice(existingIndex, 1); // Remove existing record
                 }
+                records.splice(existingIndex, 1);
             }
 
-            const record = { date, weight: `${weight} kg`, quantity, totalFee };
             records.push(record);
+            records.sort((a, b) => a.date.localeCompare(b.date));
             localStorage.setItem('records', JSON.stringify(records));
-            filterByDate();
-            alert('Rekod berjaya ditambah!');
+
+            // Reset form
+            document.getElementById('delivery-date').value = 
+                new Date().toISOString().split('T')[0];
+            weightSelect.selectedIndex = 0;
+            document.getElementById('quantity').value = '';
+
+            showNotification('Rekod berjaya ditambah!');
+            
+            if (document.getElementById('history-tab').classList.contains('active')) {
+                filterByDate();
+            }
         }
 
+        // Toggle filter inputs
         function toggleFilterInputs() {
             const filterType = document.getElementById('filter-type').value;
-            const dailyFilter = document.getElementById('daily-filter');
-            const rangeFilter = document.getElementById('range-filter');
-
-            if (filterType === 'daily') {
-                dailyFilter.style.display = 'block';
-                rangeFilter.style.display = 'none';
-            } else {
-                dailyFilter.style.display = 'none';
-                rangeFilter.style.display = 'block';
-            }
+            document.getElementById('daily-filter').style.display = 
+                filterType === 'daily' ? 'block' : 'none';
+            document.getElementById('range-filter').style.display = 
+                filterType === 'range' ? 'block' : 'none';
+            filterByDate();
         }
 
+        // Filter records by date
         function filterByDate() {
             const filterType = document.getElementById('filter-type').value;
-            let filteredRecords = [];
 
             if (filterType === 'daily') {
                 const filterDate = document.getElementById('filter-date').value;
-                filteredRecords = records.filter(record => record.date === filterDate);
-            } else if (filterType === 'range') {
+                filteredRecords = filterDate ? 
+                    records.filter(record => record.date === filterDate) : 
+                    [...records];
+            } else {
                 const startDate = document.getElementById('start-date').value;
                 const endDate = document.getElementById('end-date').value;
 
-                if (!startDate || !endDate) return;
-
-                filteredRecords = records.filter(record => record.date >= startDate && record.date <= endDate);
+                if (startDate && endDate) {
+                    if (startDate > endDate) {
+                        showNotification(
+                            'Tarikh mula tidak boleh lebih dari tarikh akhir.', 
+                            'error'
+                        );
+                        return;
+                    }
+                    filteredRecords = records.filter(record => 
+                        record.date >= startDate && record.date <= endDate
+                    );
+                } else {
+                    filteredRecords = [...records];
+                }
             }
 
-            renderFilteredTable(filteredRecords);
+            renderTable(filteredRecords);
         }
 
-        function renderFilteredTable(filteredRecords) {
-            const tableBody = document.getElementById('record-table').querySelector('tbody');
+        // Reset filter
+        function resetFilter() {
+            document.getElementById('filter-type').value = 'daily';
+            document.getElementById('filter-date').value = '';
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            toggleFilterInputs();
+            filteredRecords = [...records];
+            renderTable(filteredRecords);
+        }
+
+        // Render table
+        function renderTable(records) {
+            const tableBody = document.querySelector('.record-table tbody');
             tableBody.innerHTML = '';
             let totalFees = 0;
 
-            filteredRecords.forEach((record) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${record.date}</td>
-                    <td>${record.weight}</td>
-                    <td>${record.quantity}</td>
-                    <td>${record.totalFee}</td>
+            if (records.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center;">
+                            Tiada rekod dijumpai
+                        </td>
+                    </tr>
                 `;
-                row.onclick = () => deleteRecord(record);
-                tableBody.appendChild(row);
-                totalFees += parseFloat(record.totalFee);
-            });
+            } else {
+                records.forEach(record => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formatDate(record.date)}</td>
+                        <td>${record.weight}</td>
+                        <td>${record.quantity}</td>
+                        <td>RM${record.totalFee}</td>
+                    `;
+                    row.addEventListener('click', () => 
+                        deleteRecord(records.indexOf(record))
+                    );
+                    tableBody.appendChild(row);
+                    totalFees += parseFloat(record.totalFee);
+                });
+            }
 
-            document.getElementById('total-fees').textContent = `Jumlah Keseluruhan Upah: RM${totalFees.toFixed(2)}`;
+            document.querySelector('.total-fees').textContent = 
+                `Jumlah Keseluruhan: RM${totalFees.toFixed(2)}`;
         }
 
-        function deleteRecord(record) {
-            const confirmDelete = confirm("Adakah anda pasti mahu memadam rekod ini?");
-            if (confirmDelete) {
-                const index = records.findIndex(r => r.date === record.date && r.weight === record.weight && r.quantity === record.quantity);
-                if (index !== -1) {
-                    records.splice(index, 1);
-                    localStorage.setItem('records', JSON.stringify(records));
-                    filterByDate();
-                }
+        // Delete record
+        function deleteRecord(index) {
+            if (confirm('Anda pasti mahu memadam rekod ini?')) {
+                records.splice(index, 1);
+                localStorage.setItem('records', JSON.stringify(records));
+                filterByDate();
+                showNotification('Rekod berjaya dipadam!');
             }
         }
 
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            populateWeightCategories();
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('delivery-date').value = today;
+            document.getElementById('filter-date').value = today;
+            
+            document.getElementById('filter-date').addEventListener('change', filterByDate);
+            document.getElementById('start-date').addEventListener('change', filterByDate);
+            document.getElementById('end-date').addEventListener('change', filterByDate);
+            
+            filteredRecords = [...records];
+            renderTable(filteredRecords);
+
+            // Update datetime every second
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        });
+
+        // Export functions
         function exportToCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Tarikh,Kategori Berat,Kuantiti,Jumlah Upah (RM)\n";
+            if (filteredRecords.length === 0) {
+                showNotification('Tiada rekod untuk dieksport.', 'error');
+                return;
+            }
 
-            records.forEach(record => {
-                const row = `${record.date},${record.weight},${record.quantity},${record.totalFee}`;
-                csvContent += row + "\n";
-            });
+            const csvContent = [
+                ['Tarikh', 'Kategori Berat', 'Kuantiti', 'Jumlah Upah (RM)'],
+                ...filteredRecords.map(record => [
+                    formatDate(record.date),
+                    record.weight,
+                    record.quantity,
+                    record.totalFee
+                ])
+            ].map(row => row.join(',')).join('\n');
 
-            const encodedUri = encodeURI(csvContent);
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            link.setAttribute('href', encodedUri);
-            link.setAttribute('download', 'rekod_parcel.csv');
-            document.body.appendChild(link);
+            link.href = URL.createObjectURL(blob);
+            link.download = `rekod_parcel_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
-            document.body.removeChild(link);
+            showNotification('Rekod berjaya dieksport ke CSV!');
         }
 
         function exportToPDF() {
+            if (filteredRecords.length === 0) {
+                showNotification('Tiada rekod untuk dieksport.', 'error');
+                return;
+            }
+
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text('Rekod Parcel', 105, 15, { align: 'center' });
 
-            doc.text("Rekod Parcel", 10, 10);
-            let y = 20;
-            records.forEach(record => {
-                doc.text(`Tarikh: ${record.date}, Berat: ${record.weight}, Kuantiti: ${record.quantity}, Upah: RM${record.totalFee}`, 10, y);
-                y += 10;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(12);
+            doc.text(
+                `Dicetak pada: ${formatDate(new Date().toISOString().split('T')[0])}`,
+                105, 25, { align: 'center' }
+            );
+
+            const headers = ['Tarikh', 'Kategori Berat', 'Kuantiti', 'Jumlah Upah (RM)'];
+            let yPos = 40;
+
+            // Add headers
+            doc.setFontSize(10);
+            headers.forEach((header, index) => {
+                doc.text(header, 10 + (index * 50), yPos);
             });
 
-            doc.save("rekod_parcel.pdf");
-        }
+            yPos += 10;
 
-        function switchTab(tabId) {
-            const tabs = document.querySelectorAll('.tab');
-            const tabContents = document.querySelectorAll('.tab-content');
+            // Add records
+            filteredRecords.forEach(record => {
+                if (yPos > 280) {
+                    doc.addPage();
+                    yPos = 20;
+                }
 
-            tabs.forEach(tab => tab.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
+                doc.text(formatDate(record.date), 10, yPos);
+                doc.text(record.weight, 60, yPos);
+                doc.text(record.quantity.toString(), 110, yPos);
+                doc.text(`RM${record.totalFee}`, 160, yPos);
+                yPos += 10;
+            });
 
-            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
-            document.getElementById(tabId).classList.add('active');
+            doc.save(`rekod_parcel_${new Date().toISOString().split('T')[0]}.pdf`);
+            showNotification('Rekod berjaya dieksport ke PDF!');
         }
     </script>
 </body>
-</html>
+</html
